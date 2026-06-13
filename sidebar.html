@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Avaamo Copilot Sidebar</title>
+  <link rel="stylesheet" href="sidebar.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <span class="logo">⚡</span>
+    <span class="title">Avaamo Copilot</span>
+    <span class="page-badge" id="pageBadge">...</span>
+    <button class="close-btn" id="closeBtn" title="Close sidebar">×</button>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab active" data-tab="chat">Chat</button>
+    <button class="tab" data-tab="analyze">Analyze</button>
+    <button class="tab" data-tab="actions">Actions</button>
+  </div>
+
+  <!-- ===== CHAT TAB ===== -->
+  <div class="tab-content active" id="tab-chat">
+    <div class="messages" id="messages">
+      <div class="msg assistant">
+        <div class="bubble">
+          Hey! 👋 I'm your Avaamo Copilot. I can see the page you're on and answer questions about building bots, dialogs, and skills.
+        </div>
+      </div>
+    </div>
+    <div class="input-area">
+      <textarea id="userInput" placeholder="Ask about Avaamo..." rows="1"></textarea>
+      <button id="sendBtn" title="Send">➤</button>
+    </div>
+    <div class="chat-footer">
+      <button class="ghost-btn" id="clearBtn">🗑 Clear chat</button>
+      <span class="model-badge" id="modelBadge">groq</span>
+    </div>
+  </div>
+
+  <!-- ===== ANALYZE TAB ===== -->
+  <div class="tab-content" id="tab-analyze">
+    <div class="analyze-header">
+      <p class="hint">Reads the current Avaamo page and gives you a structured analysis.</p>
+      <button class="primary-btn" id="analyzeBtn">🔍 Analyze This Page</button>
+    </div>
+    <div class="analyze-result" id="analyzeResult"></div>
+  </div>
+
+  <!-- ===== ACTIONS TAB ===== -->
+  <div class="tab-content" id="tab-actions">
+    <p class="hint" style="padding: 12px 14px 6px;">Quick actions using the current page context:</p>
+    <div class="action-list">
+      <button class="action-btn" data-prompt="Explain what this dialog/bot does in plain English. List the main flows, intents handled, and what the user can accomplish. Output in PLAIN TEXT (no markdown, no bold, no # headers)." data-task="analyze">
+        💬 Explain This Dialog
+      </button>
+      <button class="action-btn" data-prompt="Review this Avaamo bot/dialog and find all issues: broken flows, missing fallbacks, poor UX, logic errors, or anything that could cause failures. Output as a numbered list in PLAIN TEXT (no markdown)." data-task="analyze">
+        🐛 Find Issues
+      </button>
+      <button class="action-btn" data-prompt="Create a step-by-step plan to convert this Classic bot to an Agentic bot on Avaamo. Include sections: WHAT THIS BOT DOES, CONVERSION PLAN, STEP-BY-STEP CODE, KEY DIFFERENCES. Output in PLAIN TEXT (no markdown, no # headers)." data-task="analyze">
+        ✨ Convert to Agentic
+      </button>
+      <button class="action-btn" data-prompt="Generate comprehensive test cases for this bot/dialog. Include happy path, edge cases, and error scenarios. Format as: TEST CASE | INPUT | EXPECTED OUTPUT | PASS CRITERIA. Output in PLAIN TEXT (no markdown tables)." data-task="analyze">
+        ✅ Generate Test Cases
+      </button>
+      <button class="action-btn" data-prompt="Write the JSON configuration or script code for what I can see on this page. Make it copy-paste ready for the Avaamo platform. Output ONLY the code/configuration (no markdown formatting)." data-task="code">
+        💾 Export as Code
+      </button>
+      <button class="action-btn" data-prompt="Suggest improvements to this bot: better UX, smarter fallbacks, missing intents, and how to make it more conversational. Be specific and actionable. Output in PLAIN TEXT with clear sections (no markdown, no bold, no # headers)." data-task="analyze">
+        💡 Suggest Improvements
+      </button>
+    </div>
+  </div>
+
+  <!-- marked.js for markdown rendering (local) -->
+  <script src="marked.min.js"></script>
+  <script src="sidebar.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Avaamo Copilot",
+  "version": "2.0.0",
+  "description": "AI-powered assistant for the Avaamo conversational AI platform — sidebar, DOM awareness, multi-LLM",
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": [
+    "https://*.avaamo.com/*",
+    "https://router.huggingface.co/*",
+    "https://api-inference.huggingface.co/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.groq.com/*",
+    "https://openrouter.ai/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.avaamo.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Avaamo Copilot"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "sidebar.html",
+        "sidebar.js",
+        "sidebar.css",
+        "kb.js",
+        "config.js"
+      ],
+      "matches": ["https://*.avaamo.com/*"]
+    }
+  ]
+}
