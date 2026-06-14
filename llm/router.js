@@ -30,7 +30,7 @@ Use clear section labels in UPPERCASE (e.g., WHAT THIS PAGE SHOWS:, KEY ELEMENTS
 When given page context, reference specific elements visible on the screen.
 When given documentation excerpts, base your answer on them.`;
 
-// ── Read API keys from chrome.storage.local ──────────────────────────────────
+// ── Read API keys from chrome.storage.local ──────────────────────────────
 function getKeys() {
   return new Promise((resolve) => {
     chrome.storage.local.get(
@@ -59,31 +59,21 @@ function buildUserMessage(query, context) {
 // ── Individual LLM callers ─────────────────────────────────────────────────────────
 
 async function callGemini(query, context, keys) {
-  console.log('Gemini key exists?', !!keys.geminiApiKey);
-  console.log('Gemini key prefix:', keys.geminiApiKey?.slice(0, 10));
   const apiKey = keys.geminiApiKey;
   if (!apiKey) throw new Error('Gemini API key not set. Add it in the extension popup.');
 
   const { model, endpoint } = MODELS.gemini;
   const fullPrompt = `${SYSTEM_PROMPT}\n\n${buildUserMessage(query, context)}`;
-
   const url = `${endpoint}${model}:generateContent?key=${apiKey}`;
 
-console.log('Gemini URL:', url);
-console.log('Gemini key raw:', JSON.stringify(apiKey));
-console.log('Gemini key length:', apiKey.length);
-
-const res = await fetch(url, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    contents: [{ parts: [{ text: fullPrompt }] }],
-    generationConfig: {
-      temperature: 0.3,
-      maxOutputTokens: 3000
-    }
-  })
-});
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: fullPrompt }] }],
+      generationConfig: { temperature: 0.3, maxOutputTokens: 3000 }
+    })
+  });
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`Gemini ${res.status}: ${err.slice(0, 200)}`);
@@ -190,19 +180,15 @@ const CODE_PATTERN    = /code|script|json|function|write me|generate code|snippe
 const ANALYZE_PATTERN = /analyze|analyse|review|audit|what does this|explain this|convert|find issues/i;
 
 function pickPrimary(query, context, taskType, keys) {
-  // Explicit task type overrides
   if (taskType === 'code'    && keys.openrouterApiKey) return callOpenRouter;
   if (taskType === 'analyze' && keys.geminiApiKey)     return callGemini;
   if (taskType === 'fast'    && keys.groqApiKey)       return callGroq;
 
-  // Query-based routing
   if (CODE_PATTERN.test(query)    && keys.openrouterApiKey) return callOpenRouter;
   if (ANALYZE_PATTERN.test(query) && keys.geminiApiKey)     return callGemini;
 
-  // Large context → Gemini (1M context window)
   if ((context?.visibleText?.length || 0) > 8000 && keys.geminiApiKey) return callGemini;
 
-  // Default: use user's configured preference, fall back to first available
   const preferenceMap = {
     gemini:      () => keys.geminiApiKey      ? callGemini      : null,
     groq:        () => keys.groqApiKey        ? callGroq        : null,
@@ -212,7 +198,6 @@ function pickPrimary(query, context, taskType, keys) {
   const preferred = (preferenceMap[keys.defaultLLM || 'huggingface'] || (() => null))();
   if (preferred) return preferred;
 
-  // First available key (by quality: HF > Gemini > Groq > OpenRouter)
   if (keys.hfApiKey)           return callHuggingFace;
   if (keys.geminiApiKey)       return callGemini;
   if (keys.groqApiKey)         return callGroq;
@@ -223,17 +208,13 @@ function pickPrimary(query, context, taskType, keys) {
 
 export async function routeToLLM(query, context, taskType) {
   const keys = await getKeys();
-
   const primary = pickPrimary(query, context, taskType, keys);
 
-  // Fallback chain: primary first, then by model quality (best → fallback)
-  // Qwen3-235B-A22B (HF) > Gemini 2.5 Flash > Llama 3.3 70B (Groq) > OpenRouter auto
   const allCallers = [callHuggingFace, callGemini, callGroq, callOpenRouter];
   const chain = [primary, ...allCallers.filter(fn => fn !== primary)];
 
   let lastError;
   for (const caller of chain) {
-    // Skip callers whose key isn't set
     const keyMap = {
       callGroq:        keys.groqApiKey,
       callGemini:      keys.geminiApiKey,

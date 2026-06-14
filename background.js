@@ -10,7 +10,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-// Also track when user switches to an Avaamo tab
 chrome.tabs.onActivated.addListener(({ tabId }) => {
   chrome.tabs.get(tabId, (tab) => {
     if (tab?.url?.includes('avaamo.com')) {
@@ -19,11 +18,42 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
   });
 });
 
+// ── Helper: relay a message to the active Avaamo content script ────────────
+function relayToContent(msg, sendResponse) {
+  chrome.storage.local.get('activeAvaamoTab', ({ activeAvaamoTab }) => {
+    if (!activeAvaamoTab?.tabId) {
+      sendResponse({ done: false, error: 'No active Avaamo tab found.' });
+      return;
+    }
+    chrome.tabs.sendMessage(activeAvaamoTab.tabId, msg, (res) => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ done: false, error: chrome.runtime.lastError.message });
+      } else {
+        sendResponse(res || { done: false });
+      }
+    });
+  });
+}
+
+// ── Helper: extract JSON action plan from LLM response ─────────────────────
+function extractActionPlan(text) {
+  // Look for ```json ... ``` or a raw JSON array
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const raw    = text.match(/(\[\s*\{[\s\S]*?\}\s*\])/);
+  const candidate = fenced?.[1] || raw?.[1];
+  if (!candidate) return null;
+  try {
+    const parsed = JSON.parse(candidate.trim());
+    if (Array.isArray(parsed) && parsed[0]?.type) return parsed;
+  } catch (_) {}
+  return null;
+}
+
 // ── Central message router ─────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   switch (msg.action) {
 
-    // ── LLM call ────────────────────────────────────────────────────────────
+    // ── Standard LLM call ───────────────────────────────────────────────────
     case 'callLLM': {
       routeToLLM(msg.query, msg.context, msg.taskType)
         .then(response => sendResponse({ response }))
@@ -31,7 +61,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
     }
 
-    // ── Relay getPageContext to the active Avaamo content script ────────────
+    // ── Relay getPageContext ─────────────────────────────────────────────────
     case 'getPageContext': {
       chrome.storage.local.get('activeAvaamoTab', ({ activeAvaamoTab }) => {
         if (!activeAvaamoTab?.tabId) {
@@ -53,7 +83,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
     }
 
-    // ── Toggle sidebar in the active Avaamo tab ──────────────────────────────
+    // ── Toggle sidebar ───────────────────────────────────────────────────────
     case 'toggleSidebar': {
       chrome.storage.local.get('activeAvaamoTab', ({ activeAvaamoTab }) => {
         if (!activeAvaamoTab?.tabId) { sendResponse({ done: false }); return; }
@@ -66,13 +96,35 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
     }
 
-    // ── DOM actions relayed to content script ──────────────────────────────
+    // ── Get dialog data from Angular scope ────────────────────────────────────
+    case 'getDialogData': {
+      chrome.storage.local.get('activeAvaamoTab', ({ activeAvaamoTab }) => {
+        if (!activeAvaamoTab?.tabId) { sendResponse({ error: 'No active Avaamo tab.' }); return; }
+        chrome.tabs.sendMessage(
+          activeAvaamoTab.tabId,
+          { action: 'getDialogData' },
+          (res) => sendResponse(res || { error: 'No response from content script.' })
+        );
+      });
+      return true;
+    }
+
+    // ── Execute action plan ──────────────────────────────────────────────────
+    case 'executeActions': {
+      relayToContent({ action: 'executeActions', steps: msg.steps }, sendResponse);
+      return true;
+    }
+
+    // ── Get cached API responses ─────────────────────────────────────────────
+    case 'getApiCache': {
+      relayToContent({ action: 'getApiCache' }, sendResponse);
+      return true;
+    }
+
+    // ── Legacy DOM actions ───────────────────────────────────────────────────
     case 'clickButton':
     case 'fillInput': {
-      chrome.storage.local.get('activeAvaamoTab', ({ activeAvaamoTab }) => {
-        if (!activeAvaamoTab?.tabId) { sendResponse({ done: false }); return; }
-        chrome.tabs.sendMessage(activeAvaamoTab.tabId, msg, (res) => sendResponse(res || { done: false }));
-      });
+      relayToContent(msg, sendResponse);
       return true;
     }
 

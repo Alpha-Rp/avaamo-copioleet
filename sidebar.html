@@ -20,9 +20,10 @@
     <button class="tab active" data-tab="chat">Chat</button>
     <button class="tab" data-tab="analyze">Analyze</button>
     <button class="tab" data-tab="actions">Actions</button>
+    <button class="tab" data-tab="automate">Automate</button>
   </div>
 
-  <!-- ===== CHAT TAB ===== -->
+  <!-- CHAT TAB -->
   <div class="tab-content active" id="tab-chat">
     <div class="messages" id="messages">
       <div class="msg assistant">
@@ -41,7 +42,7 @@
     </div>
   </div>
 
-  <!-- ===== ANALYZE TAB ===== -->
+  <!-- ANALYZE TAB -->
   <div class="tab-content" id="tab-analyze">
     <div class="analyze-header">
       <p class="hint">Reads the current Avaamo page and gives you a structured analysis.</p>
@@ -50,9 +51,9 @@
     <div class="analyze-result" id="analyzeResult"></div>
   </div>
 
-  <!-- ===== ACTIONS TAB ===== -->
+  <!-- ACTIONS TAB -->
   <div class="tab-content" id="tab-actions">
-    <p class="hint" style="padding: 12px 14px 6px;">Quick actions using the current page context:</p>
+    <p class="hint" style="padding: 10px 14px 4px;">Quick actions using the current page context:</p>
     <div class="action-list">
       <button class="action-btn" data-prompt="Explain what this dialog/bot does in plain English. List the main flows, intents handled, and what the user can accomplish. Output in PLAIN TEXT (no markdown, no bold, no # headers)." data-task="analyze">
         💬 Explain This Dialog
@@ -75,8 +76,39 @@
     </div>
   </div>
 
-  <!-- marked.js for markdown rendering (local) -->
+  <!-- AUTOMATE TAB -->
+  <div class="tab-content" id="tab-automate">
+    <div class="automate-top">
+      <p class="hint">Type a natural language instruction. The AI uses page context and executes DOM actions automatically.</p>
+
+      <textarea
+        id="automatePrompt"
+        class="automate-prompt"
+        placeholder="e.g. Click on the Welcome node and tell me what's inside&#10;e.g. Find all nodes and analyze the full dialog flow&#10;e.g. Fill in the response text with 'Hello, how can I help?'"
+        rows="4"
+      ></textarea>
+
+      <button class="primary-btn" id="runAutomateBtn">▶ Run Instruction</button>
+
+      <div class="automate-quick-btns">
+        <button class="quick-btn" id="harvestBtn">🔍 Harvest All Nodes</button>
+        <button class="quick-btn" id="getApiCacheBtn">📡 Get API Cache</button>
+      </div>
+    </div>
+
+    <div class="automate-log-wrap">
+      <div class="automate-log-header">
+        <span>📝 Execution Log</span>
+        <button class="ghost-btn" id="clearLogBtn">Clear</button>
+      </div>
+      <div class="automate-log" id="automateLog"></div>
+    </div>
+
+    <div class="harvest-result" id="harvestResult"></div>
+  </div>
+
   <script src="marked.min.js"></script>
+  <script src="kb.js"></script>
   <script src="sidebar.js"></script>
 </body>
 </html>

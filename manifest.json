@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Avaamo Copilot",
-  "version": "2.0.0",
-  "description": "AI-powered assistant for the Avaamo conversational AI platform — sidebar, DOM awareness, multi-LLM",
+  "version": "3.0.0",
+  "description": "AI-powered automation assistant for Avaamo — sidebar, DOM awareness, multi-LLM, DOM automation",
   "permissions": ["storage", "activeTab", "scripting", "tabs"],
   "host_permissions": [
     "https://*.avaamo.com/*",
@@ -34,7 +34,8 @@
         "sidebar.js",
         "sidebar.css",
         "kb.js",
-        "config.js"
+        "config.js",
+        "marked.min.js"
       ],
       "matches": ["https://*.avaamo.com/*"]
     }
